@@ -1,0 +1,367 @@
+// AI MarketSetu App - Full prototype
+import React, { useState, useMemo, useEffect } from "react";
+
+const INITIAL_PRODUCTS = [
+  { id: 1, title: "Handmade Cotton Masks", category: "Health", price: 99, seller: "Asha Crafts", rating: 4.5 },
+  { id: 2, title: "Organic Turmeric Powder", category: "Grocery", price: 250, seller: "FarmDirect", rating: 4.7 },
+  { id: 3, title: "Exam Preparation Notes (MBA)", category: "Education", price: 199, seller: "StudyBuddy", rating: 4.2 },
+  { id: 4, title: "Used Laptop (Refurb)", category: "Electronics", price: 15000, seller: "TechRescue", rating: 4.0 },
+  { id: 5, title: "Tailored Men’s Shirt", category: "Clothing", price: 799, seller: "StitchPro", rating: 4.6 },
+];
+
+function recommendProducts(userPrefs = { categories: [] }, products = [], limit = 3) {
+  const prefSet = new Set(userPrefs.categories);
+  const scored = products.map((p) => ({
+    ...p,
+    score: (prefSet.has(p.category) ? 15 : 0) + p.rating,
+  }));
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit);
+}
+
+function Header({ onNav, currentRoute }) {
+  const navItems = [
+    { id: "home", label: "Home" },
+    { id: "marketplace", label: "Marketplace" },
+    { id: "seller", label: "Sell" },
+    { id: "about", label: "About" },
+  ];
+
+  return (
+    <header className="bg-slate-900 text-white sticky top-0 z-10 shadow-lg">
+      <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-full flex items-center justify-center font-bold text-white shadow-md">
+            AI
+          </div>
+          <div>
+            <h1 className="text-xl font-bold">AI MarketSetu</h1>
+            <p className="text-xs text-slate-300">Local • Affordable • Smart</p>
+          </div>
+        </div>
+        <nav className="flex gap-6 text-sm">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onNav(item.id)}
+              className={`hover:underline ${currentRoute === item.id ? "font-bold underline" : ""}`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+function ProductCard({ p }) {
+  return (
+    <div className="border border-slate-200 rounded-lg p-5 hover:shadow-xl transition-shadow bg-white">
+      <div className="flex justify-between items-start mb-3">
+        <div>
+          <h4 className="font-semibold text-lg line-clamp-2">{p.title}</h4>
+          <p className="text-xs text-slate-500 mt-1">
+            {p.category} • {p.seller}
+          </p>
+        </div>
+        <div className="text-right">
+          <div className="text-xl font-bold text-green-600">₹{p.price.toLocaleString()}</div>
+          <div className="text-sm text-amber-600">{p.rating} ★</div>
+        </div>
+      </div>
+      <div className="flex gap-2 mt-4">
+        <button className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-sm hover:bg-slate-50 transition">
+          View Details
+        </button>
+        <button className="flex-1 px-4 py-2 bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-lg text-sm hover:from-slate-900 hover:to-black transition">
+          Buy Now
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Home({ onNav, userPrefs, setUserPrefs, recommendations }) {
+  const categories = ["Grocery", "Health", "Education", "Electronics", "Clothing"];
+
+  const togglePref = (cat) => {
+    setUserPrefs((prev) => {
+      const set = new Set(prev.categories);
+      if (set.has(cat)) set.delete(cat);
+      else set.add(cat);
+      return { categories: Array.from(set) };
+    });
+  };
+
+  return (
+    <main className="p-6 max-w-6xl mx-auto">
+      <section className="text-center py-12 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl mb-10">
+        <h2 className="text-4xl font-bold mb-4">Welcome to AI MarketSetu</h2>
+        <p className="text-lg text-slate-700 max-w-2xl mx-auto">
+          Discover local products with smart AI recommendations. Buy directly from small sellers across India.
+        </p>
+        <button
+          onClick={() => onNav("marketplace")}
+          className="mt-6 px-8 py-3 bg-slate-900 text-white rounded-full font-medium hover:bg-slate-800 transition"
+        >
+          Explore Marketplace
+        </button>
+      </section>
+
+      <section className="mb-12">
+        <h3 className="text-2xl font-bold mb-4">Personalize Recommendations</h3>
+        <p className="text-slate-600 mb-4">Select categories you like:</p>
+        <div className="flex flex-wrap gap-3">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => togglePref(cat)}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition ${
+                userPrefs.categories.includes(cat)
+                  ? "bg-slate-900 text-white"
+                  : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h3 className="text-2xl font-bold mb-6">Recommended For You</h3>
+        {recommendations.length === 0 ? (
+          <p className="text-center text-slate-500 py-12">Select preferences to see recommendations!</p>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-6">
+            {recommendations.map((r) => (
+              <ProductCard key={r.id} p={r} />
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}
+
+function Marketplace({ products, onNav }) {
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("All");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const categories = useMemo(() => {
+    const cats = ["All", ...new Set(products.map((p) => p.category))];
+    return cats;
+  }, [products]);
+
+  const filtered = useMemo(() => {
+    return products.filter((p) => {
+      const matchesQuery =
+        debouncedQuery === "" ||
+        p.title.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
+        p.seller.toLowerCase().includes(debouncedQuery.toLowerCase());
+      const matchesCat = category === "All" || p.category === category;
+      return matchesQuery && matchesCat;
+    });
+  }, [products, debouncedQuery, category]);
+
+  return (
+    <main className="p-6 max-w-6xl mx-auto">
+      <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search products or sellers..."
+          className="flex-1 border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-slate-900"
+        />
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-slate-900"
+        >
+          {categories.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() => onNav("seller")}
+          className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition"
+        >
+          Sell on MarketSetu
+        </button>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="text-center py-20">
+          <p className="text-xl text-slate-500">No products found.</p>
+          <p className="text-slate-400 mt-2">Try adjusting your search or filters.</p>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {filtered.map((p) => (
+            <ProductCard key={p.id} p={p} />
+          ))}
+        </div>
+      )}
+    </main>
+  );
+}
+
+function SellerDashboard({ onAdd }) {
+  const [form, setForm] = useState({
+    title: "",
+    category: "Grocery",
+    price: "",
+    seller: "",
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.title.trim() || !form.seller.trim() || !form.price) {
+      alert("Please fill all fields");
+      return;
+    }
+    const newProduct = {
+      id: Date.now(),
+      title: form.title.trim(),
+      category: form.category,
+      price: Number(form.price),
+      seller: form.seller.trim(),
+      rating: 4.0 + Math.random(),
+    };
+    onAdd(newProduct);
+    setForm({ title: "", category: "Grocery", price: "", seller: "" });
+  };
+
+  return (
+    <main className="p-6 max-w-2xl mx-auto">
+      <div className="bg-white rounded-2xl shadow-lg p-8">
+        <h2 className="text-2xl font-bold mb-6">List Your Product</h2>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <input
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            placeholder="Product Title"
+            className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
+            required
+          />
+          <select
+            value={form.category}
+            onChange={(e) => setForm({ ...form, category: e.target.value })}
+            className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
+          >
+            <option>Grocery</option>
+            <option>Health</option>
+            <option>Education</option>
+            <option>Electronics</option>
+            <option>Clothing</option>
+            <option>Other</option>
+          </select>
+          <input
+            type="number"
+            value={form.price}
+            onChange={(e) => setForm({ ...form, price: e.target.value })}
+            placeholder="Price in ₹"
+            className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
+            required
+          />
+          <input
+            value={form.seller}
+            onChange={(e) => setForm({ ...form, seller: e.target.value })}
+            placeholder="Your Name / Shop Name"
+            className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
+            required
+          />
+          <button
+            type="submit"
+            className="w-full py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition"
+          >
+            Publish Listing
+          </button>
+        </form>
+        <p className="text-xs text-slate-500 mt-6 text-center">
+          This is a prototype. In production, this would save to a database and send you a confirmation.
+        </p>
+      </div>
+    </main>
+  );
+}
+
+function About() {
+  return (
+    <main className="p-6 max-w-4xl mx-auto text-slate-700">
+      <h2 className="text-3xl font-bold mb-6">About AI MarketSetu</h2>
+      <p className="text-lg leading-relaxed mb-8">
+        AI MarketSetu is a <strong>student-built prototype</strong> showcasing how lightweight AI and simple web tech can empower small sellers in India.
+      </p>
+      <div className="grid md:grid-cols-2 gap-8">
+        <div className="bg-slate-50 p-6 rounded-xl">
+          <h3 className="font-bold text-xl mb-3">Features</h3>
+          <ul className="list-disc pl-5 space-y-2">
+            <li>AI-powered product recommendations</li>
+            <li>Mobile-first, low-bandwidth design</li>
+            <li>Easy seller onboarding</li>
+            <li>Search + filter marketplace</li>
+          </ul>
+        </div>
+        <div className="bg-slate-50 p-6 rounded-xl">
+          <h3 className="font-bold text-xl mb-3">Future Roadmap</h3>
+          <ul className="list-disc pl-5 space-y-2">
+            <li>Firebase/Auth + UPI payments</li>
+            <li>Real ML model (TensorFlow.js or API)</li>
+            <li>Location-based matching</li>
+            <li>Offline support (PWA)</li>
+          </ul>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export default function App() {
+  const [route, setRoute] = useState("home");
+  const [products, setProducts] = useState(INITIAL_PRODUCTS);
+  const [userPrefs, setUserPrefs] = useState({ categories: ["Grocery", "Health"] });
+
+  const recommendations = useMemo(() => {
+    return recommendProducts(userPrefs, products, 6);
+  }, [userPrefs, products]);
+
+  const handleAdd = (newProduct) => {
+    setProducts((prev) => [newProduct, ...prev]);
+    setRoute("marketplace");
+    alert(`"${newProduct.title}" listed successfully!`);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <Header onNav={setRoute} currentRoute={route} />
+
+      {route === "home" && (
+        <Home
+          onNav={setRoute}
+          userPrefs={userPrefs}
+          setUserPrefs={setUserPrefs}
+          recommendations={recommendations}
+        />
+      )}
+      {route === "marketplace" && <Marketplace products={products} onNav={setRoute} />}
+      {route === "seller" && <SellerDashboard onAdd={handleAdd} />}
+      {route === "about" && <About />}
+
+      <footer className="bg-slate-900 text-white text-center py-6 mt-16">
+        <p className="text-sm">
+          © {new Date().getFullYear()} AI MarketSetu — A prototype by students, for India.
+        </p>
+      </footer>
+    </div>
+  );
+}
